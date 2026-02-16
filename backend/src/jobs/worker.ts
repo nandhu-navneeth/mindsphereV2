@@ -20,7 +20,7 @@ webpush.setVapidDetails(
 const reportWorker = new Worker(QUEUES.REPORTS, async (job: Job) => {
   console.log(`Processing report job ${job.id}`);
   const { userId, weekStartDate } = job.data;
-  
+
   const start = new Date(weekStartDate);
   const end = new Date(start);
   end.setDate(end.getDate() + 7);
@@ -87,9 +87,9 @@ const reportWorker = new Worker(QUEUES.REPORTS, async (job: Job) => {
   console.log(`Report generated for ${userId}: Score ${score}`);
 
   // 6. Trigger Notification
-  await notificationQueue.add('send', { 
-    userId, 
-    title: 'Your Weekly Insight 🧠', 
+  await notificationQueue.add('send', {
+    userId,
+    title: 'Your Weekly Insight 🧠',
     body: `You saved ${totalProductiveMins} mins from doomscrolling this week! Score: ${score}/100`,
     url: '/analytics'
   });
@@ -97,34 +97,83 @@ const reportWorker = new Worker(QUEUES.REPORTS, async (job: Job) => {
 }, { connection });
 
 const notificationWorker = new Worker(QUEUES.NOTIFICATIONS, async (job: Job) => {
-   console.log(`Processing notification for ${job.data.userId}`);
-   const { userId, title, body, url } = job.data;
+  console.log(`Processing notification for ${job.data.userId}`);
+  const { userId, title, body, url } = job.data;
 
-   try {
-     const subscriptions = await prisma.pushSubscription.findMany({
-       where: { userId }
-     });
+  try {
+    const subscriptions = await prisma.pushSubscription.findMany({
+      where: { userId }
+    });
 
-     const payload = JSON.stringify({ title, body, url });
+    const payload = JSON.stringify({ title, body, url });
 
-     const promises = subscriptions.map(sub => 
-       webpush.sendNotification({
-         endpoint: sub.endpoint,
-         keys: { p256dh: sub.p256dh, auth: sub.auth }
-       }, payload).catch(err => {
-         if (err.statusCode === 404 || err.statusCode === 410) {
-           // Subscription expired/invalid, delete it
-           return prisma.pushSubscription.delete({ where: { id: sub.id } });
-         }
-         console.error('Push error', err);
-       })
-     );
-     
-     await Promise.all(promises);
-   } catch (error) {
-     console.error('Worker failed', error);
-   }
+    const promises = subscriptions.map(sub =>
+      webpush.sendNotification({
+        endpoint: sub.endpoint,
+        keys: { p256dh: sub.p256dh, auth: sub.auth }
+      }, payload).catch(err => {
+        if (err.statusCode === 404 || err.statusCode === 410) {
+          // Subscription expired/invalid, delete it
+          return prisma.pushSubscription.delete({ where: { id: sub.id } });
+        }
+        console.error('Push error', err);
+      })
+    );
+
+    await Promise.all(promises);
+  } catch (error) {
+    console.error('Worker failed', error);
+  }
 }, { connection });
+
+import { ContentFetcherService } from '../services/contentFetcher.service';
+
+const hydratePlanWorker = new Worker(QUEUES.HYDRATE_PLAN, async (job: Job) => {
+  console.log(`Hydrating plan ${job.data.planId}`);
+  const { planId, topic, difficulty } = job.data;
+
+  try {
+    const fetcher = new ContentFetcherService();
+    // Fetch a pool of content
+    const contents = await fetcher.fetchContentForTopic({
+      topic,
+      difficulty,
+      limit: 20 // Fetch enough to cover unique days if possible
+    });
+
+    // Find sessions without content
+    const sessions = await prisma.studySession.findMany({
+      where: { planId, contentId: null },
+      orderBy: { dayOffset: 'asc' }
+    });
+
+    // Distribute content
+    for (let i = 0; i < sessions.length; i++) {
+      const content = contents[i % contents.length]; // cycle if not enough
+      if (content) {
+        await prisma.studySession.update({
+          where: { id: sessions[i].id },
+          data: { contentId: content.id }
+        });
+      }
+    }
+    console.log(`Plan ${planId} hydrated with content.`);
+
+    // Notify User
+    const plan = await prisma.studyPlan.findUnique({ where: { id: planId } });
+    if (plan) {
+      await notificationQueue.add('send', {
+        userId: plan.userId,
+        title: 'Study Plan Ready 📚',
+        body: `Your custom plan for ${topic} is ready with video recommendations!`,
+        url: '/schedule'
+      });
+    }
+  } catch (error) {
+    console.error('Hydration failed', error);
+  }
+}, { connection });
+
 
 export const initWorkers = () => {
   console.log('Workers initialized');

@@ -8,6 +8,7 @@ import Home from './pages/Home';
 import SessionRunner from './pages/SessionRunner';
 import Analytics from './pages/Analytics';
 import AdminDashboard from './pages/AdminDashboard';
+import Schedule from './pages/Schedule';
 import { initSync } from './utils/syncManager';
 import { registerServiceWorker } from './utils/notifications';
 
@@ -41,6 +42,9 @@ function App() {
           } />
           <Route path="/admin" element={
             <PrivateRoute><AdminDashboard /></PrivateRoute>
+          } />
+          <Route path="/schedule" element={
+            <PrivateRoute><Schedule /></PrivateRoute>
           } />
           <Route path="/" element={
             <PrivateRoute>

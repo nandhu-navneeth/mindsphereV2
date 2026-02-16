@@ -49,10 +49,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       try {
         const storedUser = localStorage.getItem('user');
         if (storedUser) {
-           setUser(JSON.parse(storedUser));
+          setUser(JSON.parse(storedUser));
+          // Only try to fetch fresh profile if we have a session
+          await refreshProfile();
         }
-        // Always try to fetch fresh profile
-        await refreshProfile();
       } catch (error) {
         console.error('Auth check failed', error);
       } finally {

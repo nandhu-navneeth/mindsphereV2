@@ -6,6 +6,7 @@ import { GamificationService } from '../services/gamification.service';
 
 const StartSessionSchema = z.object({
   contentId: z.string(),
+  studySessionId: z.string().optional(),
 });
 
 const EndSessionSchema = z.object({
@@ -28,13 +29,17 @@ export const startSession = async (req: AuthRequest, res: Response) => {
     const userId = req.user?.userId;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
-    const { contentId } = StartSessionSchema.parse(req.body);
+    const { contentId, studySessionId } = StartSessionSchema.parse(req.body);
 
     const session = await prisma.learningSession.create({
       data: {
         userId,
         contentId,
+        studySessionId,
         startTime: new Date(),
+      },
+      include: {
+        content: true
       }
     });
 
@@ -65,9 +70,17 @@ export const endSession = async (req: AuthRequest, res: Response) => {
       data: {
         endTime,
         duration: computedDuration,
-        isCompleted: true, // Assuming explicit end means complete, or logic based on content duration
+        isCompleted: true,
       }
     });
+
+    // If linked to a study session, mark it as completed
+    if (updatedSession.studySessionId) {
+      await prisma.studySession.update({
+        where: { id: updatedSession.studySessionId },
+        data: { isCompleted: true }
+      });
+    }
 
     // Award XP and Update Streak
     await GamificationService.awardXP(userId, computedDuration, 'SESSION');

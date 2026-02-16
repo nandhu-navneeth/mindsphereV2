@@ -70,6 +70,8 @@ model User {
   moderatedCases   FlagCase[] @relation("Moderator") // If admin
   auditLogs        AuditLog[]
   pushSubscriptions PushSubscription[]
+  learningSchedules LearningSchedule[]
+  studyPlans        StudyPlan[]
 }
 
 model PushSubscription {
@@ -122,8 +124,44 @@ model Content {
   sessions    LearningSession[]
   flagCases   FlagCase[]
   
+  // New fields for Advanced Content
+  difficulty  String?  // Beginner, Intermediate, Advanced
+  externalId  String?  @unique // YouTube ID, etc.
+  sourceParams Json?   // Store extra metadata from API
+  
+  studySessions StudySession[]
+
   @@index([createdAt])
   @@index([type])
+}
+
+model StudyPlan {
+  id            String   @id @default(uuid())
+  userId        String
+  topic         String
+  difficulty    String   // Beginner, Intermediate, Advanced
+  startDate     DateTime
+  endDate       DateTime
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  sessions      StudySession[]
+  user          User     @relation(fields: [userId], references: [id])
+}
+
+model StudySession {
+  id            String   @id @default(uuid())
+  planId        String
+  dayOffset     Int      // 0, 1, 2... from startDate
+  date          DateTime // Actual date
+  topic         String   // Sub-topic/Focus for the day
+  isCompleted   Boolean  @default(false)
+  
+  contentId     String?
+  content       Content? @relation(fields: [contentId], references: [id])
+  
+  plan          StudyPlan @relation(fields: [planId], references: [id])
+  learningSessions LearningSession[]
 }
 
 model Tag {
@@ -150,8 +188,11 @@ model LearningSession {
   duration       Int?     // Computed duration in seconds
   isCompleted    Boolean  @default(false)
   
+  studySessionId String?
+  
   user           User     @relation(fields: [userId], references: [id])
   content        Content  @relation(fields: [contentId], references: [id])
+  studySession   StudySession? @relation(fields: [studySessionId], references: [id])
   interactions   InteractionEvent[]
   
   @@index([userId])
@@ -293,4 +334,19 @@ model AuditLog {
   timestamp DateTime @default(now())
 
   actor     User     @relation(fields: [actorId], references: [id])
+}
+
+model LearningSchedule {
+  id        String   @id @default(uuid())
+  userId    String
+  topic     String
+  dayOfWeek Int      // 0-6 (Sunday-Saturday)
+  startTime String   // HH:MM format
+  duration  Int      // minutes
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  user      User     @relation(fields: [userId], references: [id])
+  
+  @@index([userId])
 }

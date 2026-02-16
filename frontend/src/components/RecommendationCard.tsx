@@ -11,8 +11,15 @@ interface Content {
 
 export function RecommendationCard({ content, onStart }: { content: Content; onStart: (id: string) => void }) {
   const formatDuration = (sec: number) => {
+    if (sec >= 86400) {
+      return `${Math.floor(sec / 86400)}d ${Math.floor((sec % 86400) / 3600)}h`;
+    }
+    if (sec >= 3600) {
+      return `${Math.floor(sec / 3600)}h ${Math.floor((sec % 3600) / 60)}m`;
+    }
     const min = Math.floor(sec / 60);
-    return `${min} min`;
+    const s = sec % 60;
+    return s > 0 ? `${min}:${s.toString().padStart(2, '0')}` : `${min} min`;
   };
 
   return (
@@ -30,25 +37,24 @@ export function RecommendationCard({ content, onStart }: { content: Content; onS
           {formatDuration(content.duration)}
         </div>
       </div>
-      
+
       <div className="p-4 flex flex-col flex-1">
         <div className="flex items-center gap-2 mb-2">
-          <span className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wide ${
-            content.type === 'VIDEO' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'
-          }`}>
+          <span className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wide ${content.type === 'VIDEO' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'
+            }`}>
             {content.type}
           </span>
         </div>
-        
+
         <h3 className="text-lg font-bold text-gray-900 mb-1 leading-tight">{content.title}</h3>
-        
+
         {content.explanation && (
           <p className="text-xs text-gray-500 italic mt-auto border-t pt-2 border-gray-100">
-             ✨ {content.explanation}
+            ✨ {content.explanation}
           </p>
         )}
 
-        <button 
+        <button
           onClick={() => onStart(content.id)}
           className="mt-4 w-full rounded-lg bg-indigo-600 py-2 text-sm font-semibold text-white hover:bg-indigo-700 active:scale-[0.98] transition-all"
         >

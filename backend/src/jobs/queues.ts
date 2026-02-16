@@ -13,4 +13,7 @@ export const notificationQueue = new Queue('notifications', { connection });
 export const QUEUES = {
   REPORTS: 'reports',
   NOTIFICATIONS: 'notifications',
+  HYDRATE_PLAN: 'hydrate-plan',
 };
+
+export const hydratePlanQueue = new Queue('hydrate-plan', { connection });

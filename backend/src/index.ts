@@ -14,6 +14,7 @@ import sessionRoutes from './routes/session.routes';
 import notificationRoutes from './routes/notification.routes';
 import reportRoutes from './routes/report.routes';
 import moderationRoutes from './routes/moderation.routes';
+import scheduleRoutes from './routes/schedule.routes';
 
 // Initialize workers
 initWorkers();
@@ -33,7 +34,7 @@ app.use(globalLimiter);
 // Observability Middleware
 app.use(metricsMiddleware);
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:4173'],
+  origin: true, // Allow any origin
   credentials: true
 }));
 app.use((req, res, next) => {
@@ -50,6 +51,7 @@ app.use('/api/sessions', sessionRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/moderation', moderationRoutes);
+app.use('/api/schedule', scheduleRoutes);
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });

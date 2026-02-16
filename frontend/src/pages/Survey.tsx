@@ -38,7 +38,8 @@ export default function Survey() {
     try {
       await client.put('/api/profile/preferences', data);
       navigate('/');
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Failed to save preferences', error);
       alert('Failed to save preferences');
     }
   };
@@ -48,7 +49,7 @@ export default function Survey() {
       <div className="w-full max-w-lg rounded-xl bg-white p-8 shadow-lg">
         <h2 className="mb-6 text-2xl font-bold text-center text-gray-900">Customize Your Experience</h2>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Interests (Pick at least 1)</label>
             <div className="flex flex-wrap gap-2">
@@ -57,11 +58,10 @@ export default function Survey() {
                   key={topic}
                   type="button"
                   onClick={() => handleTopicToggle(topic)}
-                  className={`px-3 py-1 rounded-full text-sm font-medium border ${
-                    selectedTopics.includes(topic)
-                      ? 'bg-indigo-600 text-white border-indigo-600'
-                      : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                  }`}
+                  className={`px-3 py-1 rounded-full text-sm font-medium border ${selectedTopics.includes(topic)
+                    ? 'bg-indigo-600 text-white border-indigo-600'
+                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                    }`}
                 >
                   {topic}
                 </button>

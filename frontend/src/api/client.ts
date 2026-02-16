@@ -26,6 +26,10 @@ client.interceptors.response.use(
         await client.post('/api/auth/refresh');
         return client(originalRequest);
       } catch (refreshError) {
+        localStorage.removeItem('user');
+        if (window.location.pathname !== '/login') {
+          window.location.href = '/login';
+        }
         return Promise.reject(refreshError);
       }
     }

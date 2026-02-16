@@ -15,8 +15,10 @@ export default function Login() {
     try {
       await login(data);
       navigate('/');
-    } catch (error) {
-      alert('Login failed');
+    } catch (error: any) {
+      console.error('Login failed', error);
+      const message = error.response?.data?.error || error.message || 'Login failed';
+      alert(message);
     }
   };
 

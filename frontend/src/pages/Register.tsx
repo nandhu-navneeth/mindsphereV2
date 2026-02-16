@@ -17,7 +17,7 @@ export default function Register() {
       navigate('/survey');
     } catch (error: any) {
       console.error('Registration error:', error);
-      const msg = error.response?.data?.message || 'Registration failed';
+      const msg = error.response?.data?.error || error.response?.data?.message || error.message || 'Registration failed';
       alert(msg);
     }
   };
@@ -27,7 +27,7 @@ export default function Register() {
       <div className="w-full max-w-md rounded-xl bg-white p-8 shadow-lg">
         <h2 className="mb-6 text-2xl font-bold text-center text-gray-900">Create Account</h2>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-           <div>
+          <div>
             <label className="block text-sm font-medium text-gray-700">Name</label>
             <input
               {...register('name')}
@@ -61,7 +61,7 @@ export default function Register() {
             Register
           </button>
         </form>
-         <p className="mt-4 text-center text-sm text-gray-600">
+        <p className="mt-4 text-center text-sm text-gray-600">
           Already have an account? <Link to="/login" className="font-medium text-indigo-600 hover:text-indigo-500">Sign In</Link>
         </p>
       </div>
